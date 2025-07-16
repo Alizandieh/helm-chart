@@ -3,11 +3,11 @@ entries:
   generic-chart:
   - apiVersion: v2
     appVersion: "1.0"
-    created: "2022-02-26T13:15:18.6821449Z"
+    created: "2025-07-16T13:21:12.496839136+01:00"
     description: A Helm chart for Kubernetes
-    digest: 8917f922532c3116803dee559b89276985229a47672e8ae4946b52fabce62917
+    digest: aeea05cff84225c5d7e1339054d9fa9dad80d6874cec7bb6d1ad7bdd04dd8cf6
     name: generic-chart
     urls:
     - https://alizandieh.github.io/helm-chart/generic-chart-3.3.7.tgz
     version: 3.3.7
-generated: "2022-02-26T13:15:18.6769243Z"
+generated: "2025-07-16T13:21:12.478987041+01:00"

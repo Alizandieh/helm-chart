@@ -1,0 +1,206 @@
+# Default values for generic-app.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+
+# If you don't set the replicas the k8s default would be 1
+#replicaCount: 1
+
+image:
+  # name: nginx
+  # repository: <registry-url/image-name>
+  # tag: <image tag>
+  pullPolicy: Always
+
+containerPorts:
+  http: 80
+  https: 443
+
+# k8s default is 30s
+#terminationGracePeriodSeconds: 60
+
+#env:
+#  - name: WHAT_WHAT
+#    value: "chicken butt"
+#  - name: POSTGRES_PW
+#    valueFrom:
+#      secretKeyRef:
+#        name: postgresql
+#        key: postgresql-password
+#  - name: DATABASE_URL
+#    value: postgres://postgres:$(POSTGRES_PW)@postgresql/mydbname
+
+# Use `envFromSecretName` to define all of the Secret's data as container environment variables. The key from the Secret becomes the environment variable name in the Pod.
+#envFromSecretName:
+
+# adding Env variables form one or multiple ConfigMaps
+#envFromConfigmaps:
+#  - configmap1
+#  - configmap2
+
+#deploymentAnnotations:
+#  key: value
+
+#podAnnotations:
+#  iam.amazonaws.com/role: arn:aws:iam::{{ requiredEnv "AWS_ACCOUNT_NUMBER" }}:role/{{ requiredEnv "CLUSTER_NAME" }}_api
+
+#podLabels:
+#  redis-client: "true"
+
+# podSecurityContext:
+#   fsGroup: 2000
+
+# securityContext:
+#   capabilities:
+#     drop:
+#       - ALL
+#   readOnlyRootFilesystem: true
+#   runAsNonRoot: true
+#   runAsUser: 1000
+
+podDisruptionBudget:
+  enabled: false
+#   minAvailable: 1
+#   maxUnavailable: 1
+
+# imagePullSecrets:
+#   - name: simplify-bot
+
+restartPolicy: Always
+
+# If enabled it brings up an init container using the main container image but runs a custom command
+# It has the same env variables as the main container too
+migrations:
+  enabled: false
+  command: ["sh", "-c", "echo Running migrations..."]
+  resources: {}
+
+service:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+
+#serviceLabels:
+#  nodejs-metrics: "true"
+
+serviceAccount:
+  create: false
+#   name: ""
+#   annotations: {}
+#   labels: {}
+
+serviceMonitor:
+  enabled: false
+#   label: myapp-metrics
+#   path: /metrics
+#   port: 9199
+#   interval: 30s
+
+#livenessProbe:
+#  httpGet:
+#    path: /status
+#    port: http
+#  initialDelaySeconds: 30
+#  timeoutSeconds: 10
+
+#readinessProbe:
+#  httpGet:
+#    path: /status
+#    port: http
+#  initialDelaySeconds: 30
+#  timeoutSeconds: 10
+#  periodSeconds: 10
+#  successThreshold: 5
+
+
+# Volume and volumeMounts example:
+#volumeMounts:
+#  - name: ca-cert
+#    mountPath: /etc/ssl/certs/global-bundle.pem
+#    subPath: aws-global-ca-bundle.pem
+#
+#volumes:
+#  - name: ca-cert
+#    configMap:
+#      name: global-bundle
+
+
+# I don't think we can use startupProbe yet, because:
+# "This is a beta feature enabled by the StartupProbe feature flag. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes"
+# We currently get this error:
+#Error: Failed to render chart: exit status 1: Error: unable to build kubernetes objects from release manifest: error validating "": error validating data: ValidationError(Deployment.spec.template.spec.containers[0]): unknown field "startupProbe" in io.k8s.api.core.v1.Container
+#  Error: plugin "diff" exited with error
+#startupProbe:
+#  httpGet:
+#    path: /status
+#    port: http
+#  initialDelaySeconds: 30
+#  timeoutSeconds: 10
+#  periodSeconds: 10
+#  successThreshold: 5
+
+ingress:
+  enabled: false
+  # ingressClassName: nginx
+  # annotations:
+    # kubernetes.io/ingress.class: nginx
+
+  # hosts:
+  #   - host: somenewapp.simplify.network
+  #     pathType: ImplementationSpecific
+  #     paths:
+  #       - /
+  # tls:
+  #   - secretName: somenewapp.simplify.network
+  #     hosts:
+  #       - somenewapp.simplify.network
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+#configMaps:
+#  index.js:
+#    mountPath: /index.js
+#    content: |-
+#      console.log("Hello World");
+#  test.js:
+#    mountPath: /tmp/test.js
+#    content: |-
+#      {"test":"thingy"}
+
+# Auto-Scaling
+vpa:
+  enabled: false
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# Command and arguments override for a container
+# See: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/
+# The default behavior is no override; i.e. the CMD instruction
+# command: ["npm"]
+# args: ["start"]

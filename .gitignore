@@ -1,0 +1,19 @@
+# Ignore temporary files
+*.tmp
+*~
+
+# Ignore packaged charts
+*.tgz
+
+# Ignore local chart dependencies
+charts/*.tgz
+
+# Ignore IDE specific files
+.idea/
+.vscode/
+*.swp
+
+# Ignore lock files (if using Helm dependency management)
+Chart.lock
+
+index.*

@@ -10,10 +10,12 @@ metadata:
   labels:
 {{ include "generic-app.labels" . | indent 4 }}
 spec:
+  {{- if .Values.replicaCount }}
   replicas: {{ .Values.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "generic-app.name" . }}
+      app.kubernetes.io/name: {{ .Release.Name }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
@@ -23,7 +25,7 @@ spec:
         {{ $key }}: {{ $value | quote }}
         {{- end }}
       labels:
-        app.kubernetes.io/name: {{ include "generic-app.name" . }}
+        app.kubernetes.io/name: {{ .Release.Name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
         {{-  range $key, $value := .Values.podLabels }}
         {{ $key }}: {{ $value | quote }}
@@ -34,10 +36,33 @@ spec:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       restartPolicy: {{ .Values.restartPolicy }}
+      {{- if .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "generic-app.fullname" . }}
+      {{- end }}
+      {{- if .Values.migrations.enabled }}
+      initContainers:
+        - name: migrations
+          {{- if .Values.image.name }}
+          image: {{ .Values.image.name }}
+          {{- else }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          {{- end }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: {{ .Values.migrations.command | toJson }}
+          env:
+            {{- if .Values.env }}
+            {{- toYaml .Values.env | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.migrations.resources | nindent 12 }}
+      {{- end }}
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{ include "generic-app.fullname" . }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           env:
@@ -55,11 +80,11 @@ spec:
             {{- end }}
           {{- if or .Values.envFromSecretName .Values.envFromConfigmaps }}
           envFrom:
-          {{- if .Values.envFromSecretName  }} 
+          {{- if .Values.envFromSecretName  }}
           - secretRef:
               name: {{ .Values.envFromSecretName }}
           {{- end }}
-          {{- if .Values.envFromConfigmaps  }} 
+          {{- if .Values.envFromConfigmaps  }}
             {{- range .Values.envFromConfigmaps }}
           - configMapRef:
               name: {{ . | quote }}
@@ -73,14 +98,11 @@ spec:
           {{- end }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - name: http
-              containerPort: {{ .Values.containerPort }}
+          {{- range $key, $value := .Values.containerPorts }}
+            - name: {{ $key }}
+              containerPort: {{ $value }}
               protocol: TCP
-            {{- if .Values.service.metricsPort }}
-            - name: metrics
-              containerPort: {{ .Values.service.metricsPort }}
-              protocol: TCP
-            {{- end }}
+          {{- end }}
           {{- if .Values.livenessProbe }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
@@ -97,19 +119,9 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
 
-          {{- if or (.Values.docs.enabled) (.Values.configMaps)}}
+          {{- if (.Values.volumeMounts)}}
           volumeMounts:
-            {{- if .Values.configMaps }}
-              {{-  range $key, $value := .Values.configMaps }}
-            - name: config-dir
-              mountPath: {{ .mountPath }}
-              subPath: {{ $key }}
-              {{- end }}
-            {{- end }}
-            {{- if .Values.docs.enabled }}
-            - name: {{ include "generic-app.fullname" . }}-api-spec-volume
-              mountPath: /usr/share/nginx/html/resources/
-            {{- end }}
+             {{- toYaml .Values.volumeMounts | nindent 12 }}
           {{- end }}
 
           {{- if .Values.command }}
@@ -122,18 +134,9 @@ spec:
             {{- toYaml .Values.args | nindent 12 }}
           {{- end }}
 
-      {{- if or (.Values.docs.enabled)  (.Values.configMaps)}}
+      {{- with .Values.volumes }}
       volumes:
-        {{- if .Values.configMaps }}
-        - name: config-dir
-          configMap:
-            name: {{ include "generic-app.fullname" . }}
-        {{- end }}
-        {{- if .Values.docs.enabled }}
-        - name: {{ include "generic-app.fullname" . }}-api-spec-volume
-          configMap:
-            name: {{ include "generic-app.fullname" . }}-api-spec
-        {{- end }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
 
       {{- with .Values.nodeSelector }}
@@ -144,17 +147,6 @@ spec:
         {{- with .Values.affinity }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: app.kubernetes.io/instance
-                      operator: In
-                      values:
-                        - {{ .Release.Name }}
-                topologyKey: failure-domain.beta.kubernetes.io/zone
-              weight: 100
     {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
