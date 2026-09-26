@@ -1,5 +1,4 @@
 # Default values for generic-app.
-# This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 nameOverride: ""
@@ -18,8 +17,18 @@ containerPorts:
   http: 80
   https: 443
 
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 0
+    maxSurge: 25%
+
 # k8s default is 30s
 #terminationGracePeriodSeconds: 60
+
+# Command and arguments override for a container
+# command: ["npm"]
+# args: ["start"]
 
 #env:
 #  - name: WHAT_WHAT
@@ -78,6 +87,7 @@ migrations:
   resources: {}
 
 service:
+  enabled: true
   type: ClusterIP
   ports:
     - port: 80
@@ -90,16 +100,16 @@ service:
 
 serviceAccount:
   create: false
-#   name: ""
-#   annotations: {}
-#   labels: {}
+#  name: ""
+#  annotations: {}
 
 serviceMonitor:
   enabled: false
-#   label: myapp-metrics
-#   path: /metrics
-#   port: 9199
-#   interval: 30s
+#  additionalLabels:
+#    release: prometheus-stack
+#  path: /metrics
+#  port: 9199
+#  interval: 30s
 
 #livenessProbe:
 #  httpGet:
@@ -117,6 +127,14 @@ serviceMonitor:
 #  periodSeconds: 10
 #  successThreshold: 5
 
+#startupProbe:
+#  httpGet:
+#    path: /status
+#    port: http
+#  initialDelaySeconds: 30
+#  timeoutSeconds: 10
+#  periodSeconds: 10
+#  successThreshold: 5
 
 # Volume and volumeMounts example:
 #volumeMounts:
@@ -129,27 +147,18 @@ serviceMonitor:
 #    configMap:
 #      name: global-bundle
 
-
-# I don't think we can use startupProbe yet, because:
-# "This is a beta feature enabled by the StartupProbe feature flag. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes"
-# We currently get this error:
-#Error: Failed to render chart: exit status 1: Error: unable to build kubernetes objects from release manifest: error validating "": error validating data: ValidationError(Deployment.spec.template.spec.containers[0]): unknown field "startupProbe" in io.k8s.api.core.v1.Container
-#  Error: plugin "diff" exited with error
-#startupProbe:
-#  httpGet:
-#    path: /status
-#    port: http
-#  initialDelaySeconds: 30
-#  timeoutSeconds: 10
-#  periodSeconds: 10
-#  successThreshold: 5
+persistence:
+  enabled: false
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 10Gi
 
 ingress:
   enabled: false
   # ingressClassName: nginx
   # annotations:
-    # kubernetes.io/ingress.class: nginx
-
+  #   kubernetes.io/ingress.class: nginx
   # hosts:
   #   - host: somenewapp.simplify.network
   #     pathType: ImplementationSpecific
@@ -161,10 +170,6 @@ ingress:
   #       - somenewapp.simplify.network
 
 resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   # limits:
   #   cpu: 100m
   #   memory: 128Mi
@@ -199,8 +204,21 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
-# Command and arguments override for a container
-# See: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/
-# The default behavior is no override; i.e. the CMD instruction
-# command: ["npm"]
-# args: ["start"]
+# Cron Job
+# The image, ENVs, annotations, nodeSelector and affinity are all the same as Deployment settings
+# But you can run a different command or setup the cron scheduler
+cronjob:
+  enabled: false
+  # Run every minute
+  schedule: "* * * * *"
+  command: ["sh", "-c", "echo CronJob Running..."]
+  restartPolicy: Never
+  resources: {}
+
+  # Optional settings
+  # suspend: false
+  # concurrencyPolicy: Allow
+  # successfulJobsHistoryLimit: 3
+  # failedJobsHistoryLimit: 3
+  # restartPolicy: Never
+  # terminationGracePeriodSeconds: 30

@@ -1,0 +1,93 @@
+{{- if .Values.cronjob.enabled }}
+{{- $fullname := include "generic-app.fullname" . -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "generic-app.fullname" . }}-cronjob
+  annotations:
+    {{- range $key, $value := .Values.podAnnotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  labels:
+{{ include "generic-app.labels" . | indent 4 }}
+spec:
+  schedule: {{ .Values.cronjob.schedule | quote }}
+  {{- if hasKey .Values.cronjob "concurrencyPolicy" }}
+  concurrencyPolicy: {{ .Values.cronjob.concurrencyPolicy }}
+  {{- end }}
+  {{- if hasKey .Values.cronjob "suspend" }}
+  suspend: {{ .Values.cronjob.suspend }}
+  {{- end }}
+  {{- if .Values.cronjob.successfulJobsHistoryLimit }}
+  successfulJobsHistoryLimit: {{ .Values.cronjob.successfulJobsHistoryLimit }}
+  {{- end }}
+  {{- if .Values.cronjob.failedJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.cronjob.failedJobsHistoryLimit }}
+  {{- end }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: {{ .Values.cronjob.restartPolicy }}
+          containers:
+            - name: {{ $fullname }}-cronjob
+              {{- if .Values.image.name }}
+              image: {{ .Values.image.name }}
+              {{- else }}
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              {{- end }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+              env:
+                {{- if .Values.env }}
+                {{- toYaml .Values.env | nindent 16 }}
+                {{- end }}
+                {{- if .Values.secrets }}
+                {{- range $key, $value := .Values.secrets }}
+                - name: {{ $key }}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $fullname }}
+                      key: {{ $key }}
+                {{- end }}
+                {{- end }}
+
+                {{- if or .Values.envFromSecretName .Values.envFromConfigmaps }}
+                {{- if .Values.envFromSecretName }}
+                - secretRef:
+                    name: {{ .Values.envFromSecretName }}
+                {{- end }}
+
+                {{- if .Values.envFromConfigmaps }}
+                {{- range .Values.envFromConfigmaps }}
+                - configMapRef:
+                    name: {{ . | quote }}
+                {{- end }}
+                {{- end }}
+                {{- end }}
+              command: {{ .Values.cronjob.command | toJson }}
+              resources:
+                {{- toYaml .Values.cronjob.resources | nindent 16 }}
+
+              {{- if .Values.cronjob.volumeMounts }}
+              volumeMounts:
+                {{- toYaml .Values.cronjob.volumeMounts | nindent 16 }}
+              {{- end }}
+
+          {{- with .Values.cronjob.volumes }}
+          volumes:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          affinity:
+            {{- toYaml .Values.affinity | nindent 12 }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

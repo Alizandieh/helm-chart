@@ -2,13 +2,21 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ .Values.serviceMonitor.label }}
+  name: {{ include "generic-app.fullname" . }}
   labels:
 {{ include "generic-app.labels" . | indent 4 }}
+    {{- if .Values.serviceMonitor.additionalLabels }}
+    {{-  range $key, $value := .Values.serviceMonitor.additionalLabels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    {{- end }}
 spec:
   selector:
-    matchExpressions:
-      - { key: {{ .Values.serviceMonitor.label }}, operator: Exists }
+    matchLabels:
+{{ include "generic-app.labels" . | indent 6 }}
+    {{-  range $key, $value := .Values.serviceLabels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
   namespaceSelector:
     matchNames:
       - {{ .Release.Namespace }}

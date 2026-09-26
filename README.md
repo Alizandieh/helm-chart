@@ -1,12 +1,24 @@
-# AliZandieh Helm Charts
+# Helm Charts
 
--------------------------
+SimplifyVMS Helm charts and templates to deploy different applications on K8s.
 
-Useful commands:
+## Getting started
+
+Before working with the repository it is **mandatory** to execute the following command:
+
 ```
-helm package generic-chart/
-helm repo index --url https://alizandieh.github.io/helm-chart/ .
-
-helm repo add alizandieh https://alizandieh.github.io/helm-chart/
-helm repo update
+pre-commit run -a
 ```
+
+If you haven't installed pre-commit yet:
+
+```
+brew install pre-commit
+pre-commit install
+pre-commit run -a
+```
+
+## Principles
+
+The generic-chart should cover most of the applications either bakcend or frontend. Only create a new chart if you need something special that the generic-chart can't offer.
+

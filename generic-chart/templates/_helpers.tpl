@@ -60,8 +60,18 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
 
 
-
 {{- define "generic-app.job.name" -}}
 {{- $name := default .Chart.Name .Values.nameOverride -}}
 {{- printf "%s-job-%s" .Release.Name $name  | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Create the name of the service account to use
+*/}}
+{{- define "generic-app.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create -}}
+    {{ default (include "generic-app.fullname" .) .Values.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.serviceAccount.name }}
+{{- end -}}
 {{- end -}}
