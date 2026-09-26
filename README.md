@@ -1,6 +1,6 @@
 # Helm Charts
 
-SimplifyVMS Helm charts and templates to deploy different applications on K8s.
+Generic Helm charts and templates to deploy different applications on K8s.
 
 ## Getting started
 
