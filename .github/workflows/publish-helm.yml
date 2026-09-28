@@ -47,4 +47,24 @@ jobs:
           fi
 
           helm package "$CHART_DIR" --destination .packages
-          helm push ".packages/$NAME-$VERSION.tgz" "$REF"
+          PUSH_OUT="$(helm push ".packages/$NAME-$VERSION.tgz" "$REF" 2>&1)"
+
+          echo "$PUSH_OUT"
+          DIGEST="$(echo "$PUSH_OUT" | awk '/^Digest:/ {print $2}')"
+
+          {
+            echo "### ✅ Helm chart published"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| **Chart** | \`$NAME\` |"
+            echo "| **Version** | \`$VERSION\` |"
+            echo "| **App version** | \`${APP_VERSION:-n/a}\` |"
+            echo "| **Digest** | \`$DIGEST\` |"
+            echo "| **Commit** | \`${GITHUB_SHA::7}\` |"
+            echo ""
+            echo "**Install:**"
+            echo '```bash'
+            echo "helm install $NAME $REF/$NAME --version $VERSION"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
