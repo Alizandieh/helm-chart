@@ -22,3 +22,13 @@ pre-commit run -a
 
 The generic-chart should cover most of the applications either bakcend or frontend. Only create a new chart if you need something special that the generic-chart can't offer.
 
+## Usage
+
+pull the OCI helm chart by helm command or use the URL directly in your ArgoCD/FluxCD application.
+
+```
+helm pull oci://ghcr.io/alizandieh/charts/generic-chart
+
+# To view the chart's info and the version
+helm show chart oci://ghcr.io/alizandieh/charts/generic-chart
+```
