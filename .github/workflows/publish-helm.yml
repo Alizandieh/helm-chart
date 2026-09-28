@@ -1,0 +1,50 @@
+
+name: Publish Generic Helm Chart
+
+on:
+  push:
+    branches:
+      - main
+#    paths:
+#      - "generic-chart/**"
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  CHART_DIR: generic-chart
+  REGISTRY: ghcr.io
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Log in to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login "$REGISTRY" \
+            --username "${{ github.actor }}" --password-stdin
+
+      - name: Package and push
+        run: |
+          # OCI refs must be lowercase
+          OWNER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          NAME="$(helm show chart "$CHART_DIR" | awk '/^name:/ {print $2}')"
+          VERSION="$(helm show chart "$CHART_DIR" | awk '/^version:/ {print $2}')"
+          REF="oci://$REGISTRY/$OWNER/charts"
+
+          # Don't overwrite an already-published version
+          if helm show chart "$REF/$NAME" --version "$VERSION" >/dev/null 2>&1; then
+            echo "::warning::$NAME:$VERSION already exists in $REF, skipping. Bump version in Chart.yaml."
+            exit 0
+          fi
+
+          helm package "$CHART_DIR" --destination .packages
+          helm push ".packages/$NAME-$VERSION.tgz" "$REF"
